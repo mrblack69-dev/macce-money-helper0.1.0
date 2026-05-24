@@ -1336,17 +1336,13 @@ return (
 
       <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start mb-8 gap-6">
         <div>
-          <h2 className="text-3xl lg:text-5xl font-bold mb-3">
-            {activeTab}
-          </h2>
+<h2 className="text-3xl lg:text-5xl font-bold mb-3">
+  {activeTab}
+</h2>
 
-          <p className="text-gray-400 text-lg">
-            {activeTab === "Dashboard"
-              ? firstName
-                ? `Here’s your money, goals, and life overview, ${firstName}.`
-                : "Here’s your money, goals, and life overview."
-              : `Manage your ${activeTab.toLowerCase()} with MACCE.`}
-          </p>
+<p className="text-gray-400 text-lg">
+  {getTabDescription(activeTab, firstName)}
+</p>
         </div>
       </div>
 
