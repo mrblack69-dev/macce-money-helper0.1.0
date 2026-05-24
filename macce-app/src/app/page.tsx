@@ -133,7 +133,8 @@ export default function Home() {
   const [linkToken, setLinkToken] = useState("")
   const [loggedIn, setLoggedIn] = useState(false)
   const [signupMode, setSignupMode] = useState(false)
-  const [activeTab, setActiveTab] = useState("Dashboard")
+  const [activeTab, setActiveTab] = useState<TabKey>("Dashboard")
+  const [appError, setAppError] = useState("")
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
