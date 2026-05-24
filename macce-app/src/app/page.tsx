@@ -1767,31 +1767,324 @@ function TransactionsContent({
 function BudgetContent() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <BudgetCard
-        title="Food"
-        spent="$480"
-        limit="$650"
-        width="74%"
-      />
-      <BudgetCard
-        title="Gas"
-        spent="$220"
-        limit="$350"
-        width="63%"
-      />
-      <BudgetCard
-        title="Kids"
-        spent="$390"
-        limit="$500"
-        width="78%"
-      />
-      <BudgetCard
-        title="Tools/Home"
-        spent="$210"
-        limit="$300"
-        width="70%"
-      />
+
+      import { useEffect, useState } from "react"
+
+type BudgetCategory = {
+  id: string
+  title: string
+  spent: number
+  limit: number
+  isCustom: boolean
+  enabled: boolean
+}
+
+const STORAGE_KEY = "budget-categories"
+
+const starterCategories: BudgetCategory[] = [
+  {
+    id: "food",
+    title: "Food",
+    spent: 480,
+    limit: 650,
+    isCustom: false,
+    enabled: true,
+  },
+  {
+    id: "gas",
+    title: "Gas",
+    spent: 220,
+    limit: 350,
+    isCustom: false,
+    enabled: true,
+  },
+  {
+    id: "kids",
+    title: "Kids",
+    spent: 390,
+    limit: 500,
+    isCustom: false,
+    enabled: true,
+  },
+  {
+    id: "tools-home",
+    title: "Tools/Home",
+    spent: 210,
+    limit: 300,
+    isCustom: false,
+    enabled: true,
+  },
+]
+
+function formatCurrency(value: number) {
+  return `$${value.toLocaleString()}`
+}
+
+function getBudgetWidth(spent: number, limit: number) {
+  if (limit <= 0) return "0%"
+
+  const percentage = Math.round((spent / limit) * 100)
+
+  return `${Math.min(percentage, 100)}%`
+}
+
+function BudgetCard({
+  title,
+  spent,
+  limit,
+  width,
+}: {
+  title: string
+  spent: string
+  limit: string
+  width: string
+}) {
+  return (
+    <div className="rounded-xl border bg-white p-5 shadow-sm">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-lg font-semibold">{title}</h3>
+        <p className="text-sm text-gray-500">
+          {spent} / {limit}
+        </p>
+      </div>
+
+      <div className="h-3 w-full rounded-full bg-gray-200">
+        <div
+          className="h-3 rounded-full bg-black"
+          style={{ width }}
+        />
+      </div>
     </div>
+  )
+}
+
+export default function BudgetContent() {
+  const [categories, setCategories] =
+    useState<BudgetCategory[]>(starterCategories)
+
+  const [newTitle, setNewTitle] = useState("")
+  const [newLimit, setNewLimit] = useState("")
+
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+
+    if (saved) {
+      setCategories(JSON.parse(saved))
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(categories))
+  }, [categories])
+
+  const visibleCategories = categories.filter(
+    category => category.enabled
+  )
+
+  function toggleCategory(id: string) {
+    setCategories(prev =>
+      prev.map(category =>
+        category.id === id
+          ? {
+              ...category,
+              enabled: !category.enabled,
+            }
+          : category
+      )
+    )
+  }
+
+  function updateCategoryLimit(id: string, value: string) {
+    const newLimit = Number(value)
+
+    setCategories(prev =>
+      prev.map(category =>
+        category.id === id
+          ? {
+              ...category,
+              limit: Number.isFinite(newLimit) ? newLimit : 0,
+            }
+          : category
+      )
+    )
+  }
+
+  function updateCategoryTitle(id: string, value: string) {
+    setCategories(prev =>
+      prev.map(category => {
+        if (category.id !== id) return category
+
+        if (!category.isCustom) return category
+
+        return {
+          ...category,
+          title: value,
+        }
+      })
+    )
+  }
+
+  function addCustomCategory() {
+    const cleanTitle = newTitle.trim()
+    const limit = Number(newLimit)
+
+    if (!cleanTitle || !Number.isFinite(limit)) return
+
+    const customCategory: BudgetCategory = {
+      id: crypto.randomUUID(),
+      title: cleanTitle,
+      spent: 0,
+      limit,
+      isCustom: true,
+      enabled: true,
+    }
+
+    setCategories(prev => [...prev, customCategory])
+
+    setNewTitle("")
+    setNewLimit("")
+  }
+
+  function deleteCustomCategory(id: string) {
+    setCategories(prev =>
+      prev.filter(category => category.id !== id)
+    )
+  }
+
+  return (
+    <div className="space-y-8">
+      <section className="rounded-xl border bg-white p-5 shadow-sm">
+        <h2 className="mb-4 text-xl font-semibold">
+          Budget Categories
+        </h2>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {categories.map(category => (
+            <div
+              key={category.id}
+              className="rounded-lg border p-4"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={category.enabled}
+                    onChange={() => toggleCategory(category.id)}
+                  />
+
+                  <span>
+                    {category.isCustom
+                      ? "Custom Category"
+                      : category.title}
+                  </span>
+                </label>
+
+                {category.isCustom && (
+                  <button
+                    onClick={() =>
+                      deleteCustomCategory(category.id)
+                    }
+                    className="text-sm text-red-600"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              {category.isCustom && (
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm font-medium">
+                    Title
+                  </label>
+
+                  <input
+                    value={category.title}
+                    onChange={event =>
+                      updateCategoryTitle(
+                        category.id,
+                        event.target.value
+                      )
+                    }
+                    className="w-full rounded-md border px-3 py-2"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Monthly Limit
+                </label>
+
+                <input
+                  type="number"
+                  value={category.limit}
+                  onChange={event =>
+                    updateCategoryLimit(
+                      category.id,
+                      event.target.value
+                    )
+                  }
+                  className="w-full rounded-md border px-3 py-2"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-xl border bg-white p-5 shadow-sm">
+        <h2 className="mb-4 text-xl font-semibold">
+          Add Custom Category
+        </h2>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_160px_auto]">
+          <input
+            placeholder="Category title"
+            value={newTitle}
+            onChange={event => setNewTitle(event.target.value)}
+            className="rounded-md border px-3 py-2"
+          />
+
+          <input
+            type="number"
+            placeholder="Limit"
+            value={newLimit}
+            onChange={event => setNewLimit(event.target.value)}
+            className="rounded-md border px-3 py-2"
+          />
+
+          <button
+            onClick={addCustomCategory}
+            className="rounded-md bg-black px-4 py-2 text-white"
+          >
+            Add
+          </button>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">
+          Active Budgets
+        </h2>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {visibleCategories.map(category => (
+            <BudgetCard
+              key={category.id}
+              title={category.title}
+              spent={formatCurrency(category.spent)}
+              limit={formatCurrency(category.limit)}
+              width={getBudgetWidth(
+                category.spent,
+                category.limit
+              )}
+            />
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
   )
 }
 
