@@ -2095,30 +2095,384 @@ function GoalsContent() {
         Goals
       </h3>
 
-      <Goal
-        title="Emergency Fund"
-        amount="$3,250 / $10,000"
-        progress="32%"
-        width="32%"
-      />
-      <Goal
-        title="Vacation Fund"
-        amount="$1,850 / $5,000"
-        progress="37%"
-        width="37%"
-      />
-      <Goal
-        title="Debt Payoff"
-        amount="$4,200 / $17,000"
-        progress="25%"
-        width="25%"
-      />
-      <Goal
-        title="Business Fund"
-        amount="$600 / $5,000"
-        progress="12%"
-        width="12%"
-      />
+      "use client"
+
+import { useEffect, useState } from "react"
+
+type GoalItem = {
+  id: string
+  title: string
+  currentAmount: number
+  targetAmount: number
+  isCustom: boolean
+  enabled: boolean
+}
+
+const STORAGE_KEY = "user-goals"
+
+const starterGoals: GoalItem[] = [
+  {
+    id: "emergency-fund",
+    title: "Emergency Fund",
+    currentAmount: 3250,
+    targetAmount: 10000,
+    isCustom: false,
+    enabled: true,
+  },
+  {
+    id: "vacation-fund",
+    title: "Vacation Fund",
+    currentAmount: 1850,
+    targetAmount: 5000,
+    isCustom: false,
+    enabled: true,
+  },
+  {
+    id: "debt-payoff",
+    title: "Debt Payoff",
+    currentAmount: 4200,
+    targetAmount: 17000,
+    isCustom: false,
+    enabled: true,
+  },
+  {
+    id: "business-fund",
+    title: "Business Fund",
+    currentAmount: 600,
+    targetAmount: 5000,
+    isCustom: false,
+    enabled: true,
+  },
+]
+
+function formatCurrency(value: number) {
+  return `$${value.toLocaleString()}`
+}
+
+function getGoalProgress(currentAmount: number, targetAmount: number) {
+  if (targetAmount <= 0) return 0
+
+  return Math.round((currentAmount / targetAmount) * 100)
+}
+
+function getGoalWidth(currentAmount: number, targetAmount: number) {
+  const progress = getGoalProgress(currentAmount, targetAmount)
+
+  return `${Math.min(progress, 100)}%`
+}
+
+function Goal({
+  title,
+  amount,
+  progress,
+  width,
+}: {
+  title: string
+  amount: string
+  progress: string
+  width: string
+}) {
+  return (
+    <div className="mb-6 last:mb-0">
+      <div className="mb-2 flex items-center justify-between">
+        <div>
+          <h4 className="font-medium">{title}</h4>
+          <p className="text-sm text-white/60">{amount}</p>
+        </div>
+
+        <span className="text-sm text-cyan-300">
+          {progress}
+        </span>
+      </div>
+
+      <div className="h-3 w-full rounded-full bg-white/10">
+        <div
+          className="h-3 rounded-full bg-cyan-300"
+          style={{ width }}
+        />
+      </div>
+    </div>
+  )
+}
+
+export default function GoalsContent() {
+  const [goals, setGoals] = useState<GoalItem[]>(starterGoals)
+
+  const [newTitle, setNewTitle] = useState("")
+  const [newCurrentAmount, setNewCurrentAmount] = useState("")
+  const [newTargetAmount, setNewTargetAmount] = useState("")
+
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+
+    if (saved) {
+      setGoals(JSON.parse(saved))
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(goals))
+  }, [goals])
+
+  const visibleGoals = goals.filter(goal => goal.enabled)
+
+  function toggleGoal(id: string) {
+    setGoals(prev =>
+      prev.map(goal =>
+        goal.id === id
+          ? {
+              ...goal,
+              enabled: !goal.enabled,
+            }
+          : goal
+      )
+    )
+  }
+
+  function updateGoalTitle(id: string, value: string) {
+    setGoals(prev =>
+      prev.map(goal => {
+        if (goal.id !== id) return goal
+
+        if (!goal.isCustom) return goal
+
+        return {
+          ...goal,
+          title: value,
+        }
+      })
+    )
+  }
+
+  function updateCurrentAmount(id: string, value: string) {
+    const currentAmount = Number(value)
+
+    setGoals(prev =>
+      prev.map(goal =>
+        goal.id === id
+          ? {
+              ...goal,
+              currentAmount: Number.isFinite(currentAmount)
+                ? currentAmount
+                : 0,
+            }
+          : goal
+      )
+    )
+  }
+
+  function updateTargetAmount(id: string, value: string) {
+    const targetAmount = Number(value)
+
+    setGoals(prev =>
+      prev.map(goal =>
+        goal.id === id
+          ? {
+              ...goal,
+              targetAmount: Number.isFinite(targetAmount)
+                ? targetAmount
+                : 0,
+            }
+          : goal
+      )
+    )
+  }
+
+  function addCustomGoal() {
+    const cleanTitle = newTitle.trim()
+    const currentAmount = Number(newCurrentAmount)
+    const targetAmount = Number(newTargetAmount)
+
+    if (!cleanTitle) return
+    if (!Number.isFinite(currentAmount)) return
+    if (!Number.isFinite(targetAmount)) return
+
+    const customGoal: GoalItem = {
+      id: crypto.randomUUID(),
+      title: cleanTitle,
+      currentAmount,
+      targetAmount,
+      isCustom: true,
+      enabled: true,
+    }
+
+    setGoals(prev => [...prev, customGoal])
+
+    setNewTitle("")
+    setNewCurrentAmount("")
+    setNewTargetAmount("")
+  }
+
+  function deleteCustomGoal(id: string) {
+    setGoals(prev => prev.filter(goal => goal.id !== id))
+  }
+
+  return (
+    <div className="space-y-8">
+      <section className="bg-white/5 border border-white/10 rounded-3xl p-6 transition-all duration-300 hover:scale-[1.01] hover:border-cyan-300/30">
+        <h3 className="text-2xl font-semibold mb-6">
+          Customize Goals
+        </h3>
+
+        <div className="grid grid-cols-1 gap-4">
+          {goals.map(goal => (
+            <div
+              key={goal.id}
+              className="rounded-2xl border border-white/10 bg-white/5 p-4"
+            >
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={goal.enabled}
+                    onChange={() => toggleGoal(goal.id)}
+                  />
+
+                  <span>
+                    {goal.isCustom ? "Custom Goal" : goal.title}
+                  </span>
+                </label>
+
+                {goal.isCustom && (
+                  <button
+                    onClick={() => deleteCustomGoal(goal.id)}
+                    className="text-sm text-red-400"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {goal.isCustom && (
+                  <div>
+                    <label className="mb-1 block text-sm text-white/70">
+                      Goal Title
+                    </label>
+
+                    <input
+                      value={goal.title}
+                      onChange={event =>
+                        updateGoalTitle(
+                          goal.id,
+                          event.target.value
+                        )
+                      }
+                      className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="mb-1 block text-sm text-white/70">
+                    Current Amount
+                  </label>
+
+                  <input
+                    type="number"
+                    value={goal.currentAmount}
+                    onChange={event =>
+                      updateCurrentAmount(
+                        goal.id,
+                        event.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm text-white/70">
+                    Target Amount
+                  </label>
+
+                  <input
+                    type="number"
+                    value={goal.targetAmount}
+                    onChange={event =>
+                      updateTargetAmount(
+                        goal.id,
+                        event.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="bg-white/5 border border-white/10 rounded-3xl p-6">
+        <h3 className="text-2xl font-semibold mb-6">
+          Add Custom Goal
+        </h3>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_160px_160px_auto]">
+          <input
+            placeholder="Goal title"
+            value={newTitle}
+            onChange={event => setNewTitle(event.target.value)}
+            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2"
+          />
+
+          <input
+            type="number"
+            placeholder="Current"
+            value={newCurrentAmount}
+            onChange={event =>
+              setNewCurrentAmount(event.target.value)
+            }
+            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2"
+          />
+
+          <input
+            type="number"
+            placeholder="Target"
+            value={newTargetAmount}
+            onChange={event =>
+              setNewTargetAmount(event.target.value)
+            }
+            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2"
+          />
+
+          <button
+            onClick={addCustomGoal}
+            className="rounded-xl bg-cyan-300 px-4 py-2 font-medium text-black"
+          >
+            Add
+          </button>
+        </div>
+      </section>
+
+      <section className="bg-white/5 border border-white/10 rounded-3xl p-6 transition-all duration-300 hover:scale-[1.01] hover:border-cyan-300/30">
+        <h3 className="text-2xl font-semibold mb-6">
+          Goals
+        </h3>
+
+        {visibleGoals.map(goal => {
+          const progress = getGoalProgress(
+            goal.currentAmount,
+            goal.targetAmount
+          )
+
+          return (
+            <Goal
+              key={goal.id}
+              title={goal.title}
+              amount={`${formatCurrency(
+                goal.currentAmount
+              )} / ${formatCurrency(goal.targetAmount)}`}
+              progress={`${progress}%`}
+              width={getGoalWidth(
+                goal.currentAmount,
+                goal.targetAmount
+              )}
+            />
+          )
+        })}
+      </section>
     </div>
   )
 }
