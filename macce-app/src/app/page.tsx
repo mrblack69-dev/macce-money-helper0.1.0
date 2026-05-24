@@ -42,15 +42,79 @@ type BillItem = {
   confidence: number
 }
 
-const tabs = [
-  "Dashboard",
-  "Transactions",
-  "Budget",
-  "Goals",
-  "AI Insights",
-  "Reports",
-  "Settings",
+type TabKey =
+  | "Dashboard"
+  | "Transactions"
+  | "Budget"
+  | "Goals"
+  | "AI Insights"
+  | "Reports"
+  | "Alerts"
+  | "Ask MACCE"
+  | "Settings"
+
+const tabs: {
+  key: TabKey
+  label: string
+}[] = [
+  {
+    key: "Dashboard",
+    label: "Dashboard",
+  },
+  {
+    key: "Transactions",
+    label: "Transactions",
+  },
+  {
+    key: "Budget",
+    label: "Budget",
+  },
+  {
+    key: "Goals",
+    label: "Goals",
+  },
+  {
+    key: "AI Insights",
+    label: "AI Insights",
+  },
+  {
+    key: "Reports",
+    label: "Reports",
+  },
+  {
+    key: "Alerts",
+    label: "Alerts",
+  },
+  {
+    key: "Ask MACCE",
+    label: "Ask MACCE",
+  },
+  {
+    key: "Settings",
+    label: "Settings",
+  },
 ]
+
+function getTabDescription(
+  activeTab: TabKey,
+  firstName: string
+) {
+  if (activeTab === "Dashboard") {
+    return firstName
+      ? `Here’s your money, goals, and life overview, ${firstName}.`
+      : "Here’s your money, goals, and life overview."
+  }
+
+  if (activeTab === "Ask MACCE") {
+    return "Ask MACCE about your money, goals, productivity, or life."
+  }
+
+  if (activeTab === "AI Insights") {
+    return "Review personalized insights generated from your financial activity."
+  }
+
+  return `Manage your ${activeTab.toLowerCase()} with MACCE.`
+}
 
 export default function Home() {
   const [subscriptions, setSubscriptions] =
