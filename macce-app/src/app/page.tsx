@@ -1292,18 +1292,18 @@ return (
 
         <nav className="space-y-4">
           {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`w-full min-h-[44px] text-left rounded-2xl p-4 transition ${
-                activeTab === tab
-                  ? "bg-cyan-400/15 border border-cyan-300/30 text-cyan-200"
-                  : "bg-white/5 hover:bg-white/10 text-gray-300"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+  <button
+    key={tab.key}
+    onClick={() => setActiveTab(tab.key)}
+    className={`w-full min-h-[44px] text-left rounded-2xl p-4 transition ${
+      activeTab === tab.key
+        ? "bg-cyan-400/15 border border-cyan-300/30 text-cyan-200"
+        : "bg-white/5 hover:bg-white/10 text-gray-300"
+    }`}
+  >
+    {tab.label}
+  </button>
+))}
         </nav>
       </div>
 
